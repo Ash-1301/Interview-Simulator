@@ -9,12 +9,26 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def clean_json(text):
     text = text.strip()
-    if text.startswith("```"):
-        text = text.split("```")[1]
-        if text.startswith("json"):
-            text = text[4:]
+    # Remove markdown code blocks
+    if "```" in text:
+        parts = text.split("```")
+        for part in parts:
+            if part.startswith("json"):
+                text = part[4:]
+                break
+            elif "{" in part or "[" in part:
+                text = part
+                break
+    text = text.strip()
+    # Find the first { or [ and last } or ]
+    start = min(
+        (text.find("{") if "{" in text else len(text)),
+        (text.find("[") if "[" in text else len(text))
+    )
+    end = max(text.rfind("}"), text.rfind("]")) + 1
+    if start < end:
+        text = text[start:end]
     return text.strip()
-
 def extract_resume_info(raw_text: str):
     prompt = f"""
 You are a resume parser. Given the following resume text, extract information and return ONLY a JSON object with no extra text, no markdown, no backticks.
@@ -79,5 +93,4 @@ Exactly this structure:
         messages=[{"role": "user", "content": prompt}]
     )
     raw = response.choices[0].message.content
-    print("EVAL RAW RESPONSE:", raw)  # this prints to your backend terminal
     return json.loads(clean_json(raw))
