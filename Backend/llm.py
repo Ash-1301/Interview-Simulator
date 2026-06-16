@@ -53,3 +53,31 @@ Example format: ["Question 1?", "Question 2?"]
         messages=[{"role": "user", "content": prompt}]
     )
     return json.loads(clean_json(response.choices[0].message.content))
+
+
+def evaluate_answer(question: str, answer: str):
+    prompt = f"""
+You are an expert interviewer evaluating a candidate's answer.
+
+Question: {question}
+Answer: {answer}
+
+Return ONLY a JSON object with no extra text, no markdown, no backticks, no explanation.
+
+Exactly this structure:
+{{
+  "score": 7,
+  "clarity": "your feedback here",
+  "relevance": "your feedback here",
+  "depth": "your feedback here",
+  "strengths": ["strength 1", "strength 2"],
+  "improvements": ["improvement 1", "improvement 2"]
+}}
+"""
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    raw = response.choices[0].message.content
+    print("EVAL RAW RESPONSE:", raw)  # this prints to your backend terminal
+    return json.loads(clean_json(raw))

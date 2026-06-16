@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from extractor import extract_text
-from llm import extract_resume_info, generate_questions
+from llm import extract_resume_info, generate_questions, evaluate_answer
 import shutil
 import os
 
@@ -58,3 +58,13 @@ async def generate_questions_endpoint(payload: dict):
 
     questions = generate_questions(resume_info)
     return {"questions": questions}
+
+@app.post("/evaluate-answer")
+async def evaluate_answer_endpoint(payload: dict):
+    question = payload.get("question", "")
+    answer = payload.get("answer", "")
+    if not question or not answer:
+        raise HTTPException(status_code=400, detail="Question and answer are required")
+
+    evaluation = evaluate_answer(question, answer)
+    return evaluation
